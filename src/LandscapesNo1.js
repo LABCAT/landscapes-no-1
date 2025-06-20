@@ -1,4 +1,5 @@
 import { Midi } from '@tonejs/midi';
+import { LandscapesGrid } from './classes/LandscapesGrid.js';
 /** 
  * Inspiration:
  * https://openprocessing.org/sketch/1763409
@@ -13,7 +14,7 @@ import { Midi } from '@tonejs/midi';
 // const audio = new URL("@audio/polygons-no-4.ogg", import.meta.url).href;
 // const midi = new URL("@audio/polygons-no-4.mid", import.meta.url).href;
 
-const PolygonsNo4 = (p) => {
+const LansacpessNo1 = (p) => {
     /** 
      * Core audio properties
      */
@@ -31,16 +32,23 @@ const PolygonsNo4 = (p) => {
         // p.song.onended(() => p.songHasFinished = true);
     };
 
+    p.colorPalette = null;
+
+    p.landscapes = null;
+
     p.setup = () => {
         // Use WebGL for better performance
         p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
         document.getElementById("loader").classList.add("loading--complete");
         p.noFill();
-        p.colorMode(p.HSB);
         p.rectMode(p.CENTER);
+
+        p.colorPalette = p.generatePalette(6);
+        p.landscapes = new LandscapesGrid(p);
     };
 
     p.draw = () => {
+        p.landscapes.draw();
         if(p.audioLoaded && p.song.isPlaying()){
 
         }
@@ -92,7 +100,38 @@ const PolygonsNo4 = (p) => {
         
     };
 
-    p.bubblePolygons = [];
+    p.generatePalette = () => {
+            p.colorMode(p.HSB, 360, 100, 100);
+            const palette = [];
+          
+            // Base hues roughly matching example: pink/red, blue, yellow, dark
+            const baseColors = [
+              { h: p.random(340, 360), s: p.random(20, 50), b: p.random(85, 95) },  // soft pink
+              { h: p.random(0, 20), s: p.random(50, 80), b: p.random(80, 90) },     // warm red
+              { h: p.random(190, 210), s: p.random(50, 80), b: p.random(75, 85) },  // blue
+              { h: p.random(50, 70), s: p.random(60, 90), b: p.random(80, 90) },    // yellow
+            ];
+          
+            // Push base colors
+            baseColors.forEach(c => palette.push(p.color(c.h, c.s, c.b)));
+          
+            // Add some dark muted colors (low brightness, medium saturation)
+            for(let i=0; i<3; i++){
+              const h = p.random(210, 270);
+              const s = p.random(20, 40);
+              const b = p.random(20, 40);
+              palette.push(p.color(h, s, b));
+            }
+          
+            // Add a couple of near-black or near-white accents
+            palette.push(p.color(0, 0, 95)); // almost white
+            palette.push(p.color(0, 0, 10)); // almost black
+          
+            p.colorMode(p.RGB, 255);
+            return palette;
+          };
+          
+      
 
     /** 
      * Handle mouse/touch interaction
@@ -113,6 +152,12 @@ const PolygonsNo4 = (p) => {
             }
         }
     }
+
+    p.windowResized = () => {
+        p.resizeCanvas(p.windowWidth, p.windowHeight);
+        p.landscapes.updateGridForOrientation();
+        p.redraw();
+    };
 };
 
-export default PolygonsNo4;
+export default LansacpessNo1;
