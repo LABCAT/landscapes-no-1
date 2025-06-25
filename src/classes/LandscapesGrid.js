@@ -1,42 +1,44 @@
 export class LandscapesGrid {
-    constructor(p) {
+    constructor(p, duration) {
       this.p = p;
       this.baseCols = 3;
       this.baseRows = 2;
   
       this.colorsGrid = [];
-      this.orbDataGrid = [];       // will hold orb info: { color, type, size, pos, craterData }
-      this.mountainDataGrid = [];  // array of mountain shapes per cell
-      this.treeDataGrid = [];      // array of tree shapes per cell
-  
-      this.update();
+      this.elements = [];  // Single array to hold all drawable elements
+      
+      // Progress system
+      this.duration = duration * 1000;
+      this.birthTime = p.song.currentTime() * 1000;
+
+      this.updateGridForOrientation();
+      this.generateElements();
     }
   
     /** Update grid size and precompute all randomness */
-    update() {
+    generateElements() {
       const p = this.p;
       this.baseCols = p.int(p.random(2, 5));
       this.baseRows = 2;
-      this.updateGridForOrientation();
   
       const palette = p.colorPalette || [p.color(180, 50, 100)];
   
       this.colorsGrid = [];
-      this.orbDataGrid = [];
-      this.mountainDataGrid = [];
-      this.treeDataGrid = [];
+      this.elements = [];
   
+      // First populate the colors grid (still needed for sky backgrounds)
       for (let i = 0; i < this.cols; i++) {
         this.colorsGrid[i] = [];
-        this.orbDataGrid[i] = [];
-        this.mountainDataGrid[i] = [];
-        this.treeDataGrid[i] = [];
-  
         for (let j = 0; j < this.rows; j++) {
-          // Colors
           this.colorsGrid[i][j] = palette[p.floor(p.random(palette.length))];
+        }
+      }
   
-          // Orb data
+      // Now populate all elements into a single array
+      for (let i = 0; i < this.cols; i++) {
+        for (let j = 0; j < this.rows; j++) {
+          
+          // Add orb element
           const orbCol = palette[p.floor(p.random(palette.length))];
           const orbs = ["sun", "moon"];
           const type = orbs[p.int(p.random(orbs.length))];
@@ -48,48 +50,63 @@ export class LandscapesGrid {
             const craterCount = p.int(p.random(5, 10));
             for (let c = 0; c < craterCount; c++) {
               craterData.push({
-                cxOffset: p.random(-0.5, 0.5), // relative to orbSize
+                cxOffset: p.random(-0.5, 0.5),
                 cyOffset: p.random(-0.5, 0.5),
                 cr: orbSize / p.random(3, 10),
               });
             }
           }
-          this.orbDataGrid[i][j] = {
+          
+          this.elements.push({
+            elementType: 'orb',
+            gridI: i,
+            gridJ: j,
             color: orbCol,
             type,
             size: orbSize,
             ox,
             oy,
             craterData,
-          };
+          });
   
-          // Mountain data (array of mountain shapes)
+          // Add mountain elements
           const mountainCount = p.int(p.random(3, 8));
-          let mountains = [];
           for (let m = 0; m < mountainCount; m++) {
-            mountains.push({
+            this.elements.push({
+              elementType: 'mountain',
+              gridI: i,
+              gridJ: j,
               mw: p.random(25, p.width / this.cols * 0.35),
               mh: p.random(5, p.height / this.rows * 0.35),
-              mx: p.random(1.4) - 0.2, // relative to width
-              my: p.random(1.4) - 0.2, // relative to height
+              mx: p.random(1.4) - 0.2,
+              my: p.random(1.4) - 0.2,
             });
           }
-          this.mountainDataGrid[i][j] = mountains;
   
-          // Tree data (array of tree shapes)
+          // Add tree elements
           const treeCount = p.int(p.random(20, 30));
-          let trees = [];
           for (let t = 0; t < treeCount; t++) {
-            trees.push({
+            this.elements.push({
+              elementType: 'tree',
+              gridI: i,
+              gridJ: j,
               tw: p.random(2, 10),
               thRatio: p.random(2, 5),
               tx: p.random(1.4) - 0.2,
               ty: p.random(1.4) - 0.2,
             });
           }
-          this.treeDataGrid[i][j] = trees;
         }
       }
+    }
+    
+    /** Update progress based on time */
+    update() {
+      const currentTime = this.p.song.currentTime() * 1000;
+      const elapsed = currentTime - this.birthTime;
+      const rawProgress = elapsed / this.duration;
+
+      this.progress = this.p.constrain(rawProgress, 0, 1);
     }
   
     /** Update cols and rows based on orientation */
@@ -114,21 +131,38 @@ export class LandscapesGrid {
       p.resetMatrix();
       p.translate(-p.width / 2, -p.height / 2);
   
+      // Draw sky backgrounds for all cells
       for (let i = 0; i < this.cols; i++) {
         for (let j = 0; j < this.rows; j++) {
           const x = i * w;
           const y = j * h;
-  
           const skyColor = this.colorsGrid[i][j];
-          const orbData = this.orbDataGrid[i][j];
-          const mountainData = this.mountainDataGrid[i][j];
-          const treeData = this.treeDataGrid[i][j];
-  
           this.drawSky(x, y, w, h, skyColor);
-          this.drawOrb(x, y, w, h, orbData);
-          this.drawMountains(x, y, w, h, mountainData);
-          this.drawTrees(x, y, w, h, treeData);
+        }
+      }
   
+      const elementsToShow = Math.floor(this.elements.length * this.progress);
+
+      // Draw elements up to the progress limit
+      for (let i = 0; i < elementsToShow; i++) {
+        const element = this.elements[i];
+        const x = element.gridI * w;
+        const y = element.gridJ * h;
+        
+        if (element.elementType === 'orb') {
+          this.drawOrb(x, y, w, h, element);
+        } else if (element.elementType === 'mountain') {
+          this.drawMountain(x, y, w, h, element);
+        } else if (element.elementType === 'tree') {
+          this.drawTree(x, y, w, h, element);
+        }
+      }
+  
+      // Draw grid borders
+      for (let i = 0; i < this.cols; i++) {
+        for (let j = 0; j < this.rows; j++) {
+          const x = i * w;
+          const y = j * h;
           p.noFill();
           p.stroke(0);
           p.rect(x + w / 2, y + h / 2, w, h);
@@ -138,10 +172,10 @@ export class LandscapesGrid {
       p.pop();
     }
   
-    /** Draw an orb from precomputed data */
-    drawOrb(x, y, w, h, orbData) {
+    /** Draw an orb from element data */
+    drawOrb(x, y, w, h, element) {
       const p = this.p;
-      const { color, type, size, ox, oy, craterData } = orbData;
+      const { color, type, size, ox, oy, craterData } = element;
   
       let orb = p.createGraphics(w, h);
   
@@ -191,49 +225,48 @@ export class LandscapesGrid {
       p.image(g, x, y);
     }
   
-    /** Draw precomputed mountain shapes */
-    drawMountains(x, y, w, h, mountains) {
+    /** Draw a single mountain from element data */
+    drawMountain(x, y, w, h, element) {
       const p = this.p;
+      const { mw, mh, mx, my } = element;
+      
       const grfx = p.createGraphics(w, h);
       grfx.rectMode(p.CENTER);
-      grfx.fill(100, 100, 100); // Default mountain color or pass as param if needed
+      grfx.fill(100, 100, 100);
       grfx.stroke(9);
       grfx.strokeWeight(1.5);
   
-      mountains.forEach(({ mw, mh, mx, my }) => {
-        const posX = mx * grfx.width;
-        const posY = my * grfx.height;
+      const posX = mx * grfx.width;
+      const posY = my * grfx.height;
   
-        grfx.beginShape();
-        grfx.vertex(posX + mw, grfx.height);
-        grfx.vertex(posX, grfx.height - mh);
-        grfx.vertex(posX - mw, grfx.height);
-        grfx.endShape(p.CLOSE);
-      });
+      grfx.beginShape();
+      grfx.vertex(posX + mw, grfx.height);
+      grfx.vertex(posX, grfx.height - mh);
+      grfx.vertex(posX - mw, grfx.height);
+      grfx.endShape(p.CLOSE);
   
       p.image(grfx, x, y);
     }
   
-    /** Draw precomputed tree shapes */
-    drawTrees(x, y, w, h, trees) {
+    /** Draw a single tree from element data */
+    drawTree(x, y, w, h, element) {
       const p = this.p;
+      const { tw, thRatio, tx, ty } = element;
+      
       const grfx = p.createGraphics(w, h);
       grfx.noStroke();
-      grfx.fill(50, 150, 50); // Default tree color or pass as param if needed
+      grfx.fill(50, 150, 50);
   
-      trees.forEach(({ tw, thRatio, tx, ty }) => {
-        const th = tw * thRatio;
-        const posX = tx * grfx.width;
-        const posY = ty * grfx.height;
+      const th = tw * thRatio;
+      const posX = tx * grfx.width;
+      const posY = ty * grfx.height;
   
-        grfx.beginShape();
-        grfx.vertex(posX + tw, grfx.height);
-        grfx.vertex(posX, grfx.height - th);
-        grfx.vertex(posX - tw, grfx.height);
-        grfx.endShape(p.CLOSE);
-      });
+      grfx.beginShape();
+      grfx.vertex(posX + tw, grfx.height);
+      grfx.vertex(posX, grfx.height - th);
+      grfx.vertex(posX - tw, grfx.height);
+      grfx.endShape(p.CLOSE);
   
       p.image(grfx, x, y);
     }
   }
-  

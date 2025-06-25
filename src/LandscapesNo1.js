@@ -11,14 +11,15 @@ import { LandscapesGrid } from './classes/LandscapesGrid.js';
 /** 
  * Add your ogg and mid files in the audio director and update these file names
  */
-// const audio = new URL("@audio/polygons-no-4.ogg", import.meta.url).href;
-// const midi = new URL("@audio/polygons-no-4.mid", import.meta.url).href;
+const audio = new URL("@audio/landscapes-no-1.ogg", import.meta.url).href;
+const midi = new URL("@audio/landscapes-no-1.mid", import.meta.url).href;
 
 const LansacpessNo1 = (p) => {
     /** 
      * Core audio properties
      */
     p.song = null;
+    p.PPQ = 3840 * 4;
     p.bpm = 127;
     p.audioLoaded = false;
     p.songHasFinished = false;
@@ -28,8 +29,8 @@ const LansacpessNo1 = (p) => {
      * This runs first, before setup()
      */
     p.preload = () => {
-        // p.song = p.loadSound(audio, p.loadMidi);
-        // p.song.onended(() => p.songHasFinished = true);
+        p.song = p.loadSound(audio, p.loadMidi);
+        p.song.onended(() => p.songHasFinished = true);
     };
 
     p.colorPalette = null;
@@ -39,18 +40,15 @@ const LansacpessNo1 = (p) => {
     p.setup = () => {
         // Use WebGL for better performance
         p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
-        document.getElementById("loader").classList.add("loading--complete");
         p.noFill();
         p.rectMode(p.CENTER);
-
-        p.colorPalette = p.generatePalette(6);
-        p.landscapes = new LandscapesGrid(p);
+        p.colorPalette = p.generatePalette(6);    
     };
 
     p.draw = () => {
-        p.landscapes.draw();
-        if(p.audioLoaded && p.song.isPlaying()){
-
+        if(p.landscapes && p.audioLoaded && p.song.isPlaying()){
+            p.landscapes.draw();
+            p.landscapes.update();
         }
     }
 
@@ -60,17 +58,17 @@ const LansacpessNo1 = (p) => {
      */
     p.loadMidi = () => {
         Midi.fromUrl(midi).then((result) => {
-            // console.log('MIDI loaded:', result);
-            // const track1 = result.tracks[3].notes; // Combinator - Loading Screen
-            // p.scheduleCueSet(track1, 'executeTrack1');
+            console.log('MIDI loaded:', result);
+            const track1 = result.tracks[2].notes; // Multichord
+            p.scheduleCueSet(track1, 'executeTrack1');
             // const track2 = result.tracks[4].notes; // Europa - Cinematic Pulse
             // p.scheduleCueSet(track2, 'executeTrack2');
             // const controlChanges = Object.assign({},result.tracks[5].controlChanges); // Cinematic Pulse Filter
             // const track3 = controlChanges[Object.keys(controlChanges)[0]];
             // p.scheduleCueSet(track3, 'executeTrack3');
-            // document.getElementById("loader").classList.add("loading--complete");
-            // document.getElementById('play-icon').classList.add('fade-in');
-            // p.audioLoaded = true;
+            document.getElementById("loader").classList.add("loading--complete");
+            document.getElementById('play-icon').classList.add('fade-in');
+            p.audioLoaded = true;
         });
     };
 
@@ -97,7 +95,8 @@ const LansacpessNo1 = (p) => {
 
     p.executeTrack1 = (note) => {
         const { currentCue, durationTicks } = note;
-        
+        const duration = (durationTicks / p.PPQ) * (60 / p.bpm);
+        p.landscapes = new LandscapesGrid(p, duration);
     };
 
     p.generatePalette = () => {
