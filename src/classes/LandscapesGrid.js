@@ -1,3 +1,4 @@
+import { Mountain  } from "./Mountain.js";
 export class LandscapesGrid {
   constructor(p) {
     this.p = p;
@@ -81,19 +82,32 @@ export class LandscapesGrid {
         });
 
         // Add mountains
+        // const mountainColor = palette[p.floor(p.random(palette.length))];
+        // const mountainCount = p.int(p.random(3, 8));
+        // for (let m = 0; m < mountainCount; m++) {
+        //   mountainArray.push({
+        //     elementType: 'mountain',
+        //     gridI: i,
+        //     gridJ: j,
+        //     color: mountainColor,
+        //     mw: p.random(p.width / this.cols * 0.15, p.width / this.cols * 0.3),
+        //     mh: p.random(p.height / this.rows * 0.15, p.height / this.rows * 0.25),
+        //     mx: p.random(0.1, 0.9),
+        //     my: p.random(0.6, 1.0),
+        //   });
+        // }
+
         const mountainColor = palette[p.floor(p.random(palette.length))];
-        const mountainCount = p.int(p.random(3, 8));
+        const mountainCount = p.int(p.random(3, 6));
+
         for (let m = 0; m < mountainCount; m++) {
-          mountainArray.push({
-            elementType: 'mountain',
-            gridI: i,
-            gridJ: j,
-            color: mountainColor,
-            mw: p.random(p.width / this.cols * 0.15, p.width / this.cols * 0.3),
-            mh: p.random(p.height / this.rows * 0.15, p.height / this.rows * 0.25),
-            mx: p.random(0.1, 0.9),
-            my: p.random(0.6, 1.0),
-          });
+          const mw = p.random(p.width / this.cols * 0.15, p.width / this.cols * 0.3);
+          const mh = p.random(p.height / this.rows * 0.15, p.height / this.rows * 0.25);
+          const mx = p.random(0.1, 0.9);
+          const my = p.random(0.6, 1.0);
+
+          const mountain = new Mountain(p, { gridI: i, gridJ: j, cols: this.cols, color: mountainColor, mw, mh, mx, my });
+          mountainArray.push(mountain);
         }
 
         // Add trees
@@ -122,8 +136,6 @@ export class LandscapesGrid {
 
     // Concatenate groups in order
     this.elements = skyArray.concat(orbsArray, mountainArray, treeArray);
-
-    console.log(this.elements);
   }
 
   update() {
@@ -160,8 +172,8 @@ export class LandscapesGrid {
         this.drawSky(x, y, w, h, element);
       } else if (element.elementType === 'orb') {
         this.drawOrb(x, y, w, h, element);
-      } else if (element.elementType === 'mountain') {
-        this.drawMountain(x, y, w, h, element);
+      } else if (element instanceof Mountain) {
+        element.draw(x, y, w, h);
       } else if (element.elementType === 'tree') {
         this.drawTree(x, y, w, h, element);
       }
