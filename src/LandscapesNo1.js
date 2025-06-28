@@ -35,20 +35,21 @@ const LansacpessNo1 = (p) => {
 
     p.colorPalette = null;
 
-    p.landscapes = null;
+    p.landscapes = [];
+
+    p.currentLandscapes = null;
 
     p.setup = () => {
-        // Use WebGL for better performance
-        p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
-        p.noFill();
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.colorPalette = p.generatePalette(6);
         p.rectMode(p.CENTER);
-        p.colorPalette = p.generatePalette(6);    
+        p.landscapes = Array.from({ length: 46 }, () => new LandscapesGrid(p));
     };
 
     p.draw = () => {
-        if(p.landscapes && p.audioLoaded && p.song.isPlaying()){
-            p.landscapes.draw();
-            p.landscapes.update();
+        if(p.currentLandscapes && p.audioLoaded && p.song.isPlaying()){
+            p.currentLandscapes.draw();
+            p.currentLandscapes.update();
         }
     }
 
@@ -59,13 +60,8 @@ const LansacpessNo1 = (p) => {
     p.loadMidi = () => {
         Midi.fromUrl(midi).then((result) => {
             console.log('MIDI loaded:', result);
-            const track1 = result.tracks[2].notes; // Multichord
+            const track1 = result.tracks[2].notes; // Waves Layer Edition - Multichord
             p.scheduleCueSet(track1, 'executeTrack1');
-            // const track2 = result.tracks[4].notes; // Europa - Cinematic Pulse
-            // p.scheduleCueSet(track2, 'executeTrack2');
-            // const controlChanges = Object.assign({},result.tracks[5].controlChanges); // Cinematic Pulse Filter
-            // const track3 = controlChanges[Object.keys(controlChanges)[0]];
-            // p.scheduleCueSet(track3, 'executeTrack3');
             document.getElementById("loader").classList.add("loading--complete");
             document.getElementById('play-icon').classList.add('fade-in');
             p.audioLoaded = true;
@@ -96,39 +92,41 @@ const LansacpessNo1 = (p) => {
     p.executeTrack1 = (note) => {
         const { currentCue, durationTicks } = note;
         const duration = (durationTicks / p.PPQ) * (60 / p.bpm);
-        p.landscapes = new LandscapesGrid(p, duration);
+        p.clear();
+        p.currentLandscapes = p.landscapes[currentCue - 1];
+        p.currentLandscapes.init(duration);
     };
 
     p.generatePalette = () => {
-            p.colorMode(p.HSB, 360, 100, 100);
-            const palette = [];
-          
-            // Base hues roughly matching example: pink/red, blue, yellow, dark
-            const baseColors = [
-              { h: p.random(340, 360), s: p.random(20, 50), b: p.random(85, 95) },  // soft pink
-              { h: p.random(0, 20), s: p.random(50, 80), b: p.random(80, 90) },     // warm red
-              { h: p.random(190, 210), s: p.random(50, 80), b: p.random(75, 85) },  // blue
-              { h: p.random(50, 70), s: p.random(60, 90), b: p.random(80, 90) },    // yellow
-            ];
-          
-            // Push base colors
-            baseColors.forEach(c => palette.push(p.color(c.h, c.s, c.b)));
-          
-            // Add some dark muted colors (low brightness, medium saturation)
-            for(let i=0; i<3; i++){
-              const h = p.random(210, 270);
-              const s = p.random(20, 40);
-              const b = p.random(20, 40);
-              palette.push(p.color(h, s, b));
-            }
-          
-            // Add a couple of near-black or near-white accents
-            palette.push(p.color(0, 0, 95)); // almost white
-            palette.push(p.color(0, 0, 10)); // almost black
-          
-            p.colorMode(p.RGB, 255);
-            return palette;
-          };
+        p.colorMode(p.HSB, 360, 100, 100);
+        const palette = [];
+        
+        // Base hues roughly matching example: pink/red, blue, yellow, dark
+        const baseColors = [
+            { h: p.random(340, 360), s: p.random(20, 50), b: p.random(85, 95) },  // soft pink
+            { h: p.random(0, 20), s: p.random(50, 80), b: p.random(80, 90) },     // warm red
+            { h: p.random(190, 210), s: p.random(50, 80), b: p.random(75, 85) },  // blue
+            { h: p.random(50, 70), s: p.random(60, 90), b: p.random(80, 90) },    // yellow
+        ];
+        
+        // Push base colors
+        baseColors.forEach(c => palette.push(p.color(c.h, c.s, c.b)));
+        
+        // Add some dark muted colors (low brightness, medium saturation)
+        for(let i=0; i<3; i++){
+            const h = p.random(210, 270);
+            const s = p.random(20, 40);
+            const b = p.random(20, 40);
+            palette.push(p.color(h, s, b));
+        }
+        
+        // Add a couple of near-black or near-white accents
+        palette.push(p.color(0, 0, 95)); // almost white
+        palette.push(p.color(0, 0, 10)); // almost black
+        
+        p.colorMode(p.RGB, 255);
+        return palette;
+    };
           
       
 
@@ -154,7 +152,7 @@ const LansacpessNo1 = (p) => {
 
     p.windowResized = () => {
         p.resizeCanvas(p.windowWidth, p.windowHeight);
-        p.landscapes.updateGridForOrientation();
+        p.currentLandscapes.updateGridForOrientation();
         p.redraw();
     };
 };
