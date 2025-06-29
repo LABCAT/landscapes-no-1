@@ -92,9 +92,14 @@ const LansacpessNo1 = (p) => {
     p.executeTrack1 = (note) => {
         const { currentCue, durationTicks } = note;
         const duration = (durationTicks / p.PPQ) * (60 / p.bpm);
+
         p.clear();
         p.currentLandscapes = p.landscapes[currentCue - 1];
         p.currentLandscapes.init(duration);
+
+        if(currentCue % 9 > 5) {
+            // p.currentLandscapes.setFullDisplayMode();
+        }
     };
 
     p.generatePalette = () => {
