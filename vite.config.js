@@ -4,7 +4,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import path from 'path';
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: './', // Use relative paths for all built assets
   resolve: {
     alias: {
       '@audio': path.resolve(__dirname, 'src/audio'),
@@ -14,6 +14,13 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    rollupOptions: {
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name][extname]',
+      },
+    },
   },
   plugins: [
     inject({
@@ -28,6 +35,10 @@ export default defineConfig({
         {
           src: 'src/audio/*.mid',
           dest: 'audio',
+        },
+        {
+          src: 'src/lib/fxhash.min.js',
+          dest: 'lib',
         },
       ],
     }),

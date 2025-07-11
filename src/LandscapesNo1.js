@@ -7,12 +7,10 @@ import { LandscapesGrid } from './classes/LandscapesGrid.js';
  * https://psychedelicscene.com/wp-content/uploads/2022/03/234-123-29078_1024x1024.webp
  */
 
-
-/** 
- * Add your ogg and mid files in the audio director and update these file names
- */
-const audio = new URL("@audio/landscapes-no-1.ogg", import.meta.url).href;
-const midi = new URL("@audio/landscapes-no-1.mid", import.meta.url).href;
+// Use the Vite base URL for compatibility with dev, GitHub Pages, and fxhash
+const base = import.meta.env.BASE_URL || './';
+const audio = base + 'audio/landscapes-no-1.ogg';
+const midi = base + 'audio/landscapes-no-1.mid';
 
 const LansacpessNo1 = (p) => {
     /** 
@@ -40,14 +38,30 @@ const LansacpessNo1 = (p) => {
     p.currentLandscapes = null;
 
     p.setup = () => {
+        // Use $fx from fxhash.min.js
+        let seed = 12345;
+        let fxhash = null;
+        if (typeof window !== 'undefined' && window.$fx && window.$fx.hash) {
+            fxhash = window.$fx.hash;
+            // Use the first 16 characters of the hash as a hex seed, or hashCode fallback
+            seed = parseInt(fxhash.slice(2, 16), 16) || Array.from(fxhash).reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        }
+        p.randomSeed(seed);
         p.createCanvas(p.windowWidth, p.windowHeight);
         p.colorPalette = p.generatePalette(6);
         p.rectMode(p.CENTER);
         p.landscapes = Array.from({ length: 46 }, () => new LandscapesGrid(p));
+        p.showingStatic = true;
     };
 
     p.draw = () => {
-        if(p.currentLandscapes && p.audioLoaded && p.song.isPlaying()){
+        if (p.showingStatic) {
+            p.background(255);
+            if (p.landscapes.length > 0) {
+                p.landscapes[0].fullDisplay = true;
+                p.landscapes[0].draw();
+            }
+        } else if(p.currentLandscapes && p.audioLoaded && p.song.isPlaying()){
             p.currentLandscapes.draw();
             p.currentLandscapes.update();
         }
@@ -95,10 +109,13 @@ const LansacpessNo1 = (p) => {
 
         p.clear();
         p.currentLandscapes = p.landscapes[currentCue - 1];
-        p.currentLandscapes.init(duration);
 
         if(currentCue % 9 > 5) {
-            // p.currentLandscapes.setFullDisplayMode();
+            p.currentLandscapes.setFullDisplayMode();
+        }
+        else {
+            p.currentLandscapes.fullDisplay = false;
+            p.currentLandscapes.init(duration);
         }
     };
 
@@ -151,6 +168,8 @@ const LansacpessNo1 = (p) => {
                 }
                 document.getElementById("play-icon").classList.remove("fade-in");
                 p.song.play();
+                p.showingStatic = false;
+                p.currentLandscapes = p.landscapes[0];
             }
         }
     }
