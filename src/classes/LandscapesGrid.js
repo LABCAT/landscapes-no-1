@@ -48,15 +48,22 @@ export class LandscapesGrid {
     for (let i = 0; i < this.cols; i++) {
       this.colorsGrid[i] = [];
       for (let j = 0; j < this.rows; j++) {
-        let chosenColor = palette[p.floor(p.random(palette.length))];
-    
-        // Check only the left neighbor (if it exists)
-        if (j > 0 && this.colorsGrid[i][j - 1] === chosenColor) {
-          // If it's the same, pick a new color from the filtered palette
-          const availableColors = palette.filter(c => c !== chosenColor);
-          // Ensure there's at least one different color to pick
-          chosenColor = availableColors[p.floor(p.random(availableColors.length))];
+        // Get all colors that haven't been used yet
+        const usedColors = [];
+        for (let x = 0; x < this.cols; x++) {
+          for (let y = 0; y < this.rows; y++) {
+            if (this.colorsGrid[x] && this.colorsGrid[x][y]) {
+              usedColors.push(this.colorsGrid[x][y]);
+            }
+          }
         }
+        
+        // Filter out used colors
+        const availableColors = palette.filter(c => !usedColors.includes(c));
+        
+        // If we run out of colors, start over with the full palette
+        const colorsToChooseFrom = availableColors.length > 0 ? availableColors : palette;
+        let chosenColor = colorsToChooseFrom[p.floor(p.random(colorsToChooseFrom.length))];
     
         this.colorsGrid[i][j] = chosenColor;
       }
@@ -217,8 +224,6 @@ export class LandscapesGrid {
   
       if (element.elementType === 'sky') {
         this.drawSky(x, y, cellWidth, cellHeight, element);
-      } else if (element.elementType === 'orb') {
-        this.drawOrb(x, y, cellWidth, cellHeight, element);
       } else {
         element.draw(x, y, cellWidth, cellHeight);
       }
@@ -246,35 +251,5 @@ export class LandscapesGrid {
     p.noStroke();
     p.fill(color);
     p.rect(x + w / 2, y + h / 2, w, h);
-  }
-
-  drawOrb(x, y, w, h, element) {
-    const p = this.p;
-    const { color, type, size, ox, oy, craterData } = element;
-
-    let orbSize = size;
-    let posX = x + ox * w;
-    let posY = y + oy * h;
-
-    let c = p.color(color);
-    c.setAlpha(0.2);
-    p.noStroke();
-    p.fill(c);
-    let glow = orbSize * 0.3;
-    p.circle(posX, posY, orbSize + glow);
-
-    c.setAlpha(1);
-    p.fill(c);
-    p.stroke(9);
-    p.strokeWeight(1.5);
-    p.circle(posX, posY, orbSize);
-
-    if (type === "moon") {
-      p.noStroke();
-      p.fill(150, 150, 150, 50);
-      craterData.forEach(({ cxOffset, cyOffset, cr }) => {
-        p.circle(posX + cxOffset * orbSize, posY + cyOffset * orbSize, cr);
-      });
-    }
   }
 }

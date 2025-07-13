@@ -22,9 +22,9 @@ export class Orb {
     this.type = type;
 
     // Calculate size and offsets within the Orb class
-    this.size = this._calculateOrbSize();
     this.ox = p.random(0.25, 0.75);
     this.oy = p.random(0.25, 0.75);
+    this.size = this._calculateOrbSize();
 
     // Generate a random vibrant color that is significantly different from the sky color
     this.color = this.generateDistinctVibrantColor(skyColorForComplement);
@@ -41,19 +41,25 @@ export class Orb {
    */
   _calculateOrbSize() {
     const p = this.p;
-    // Calculate the dimensions of a single grid cell *as it would be displayed*.
-    // LandscapesGrid's draw method already handles swapping effective gridI/J
-    // However, the base cell size is determined by p.width/cols and p.height/rows.
-    // To make orbs consistently sized relative to their cell regardless of orientation,
-    // we use the minimum of the calculated cell width or height.
-    const effectiveCellWidth = p.width / this.cols;
-    const effectiveCellHeight = p.height / this.rows;
-
-    const baseCellDimension = p.min(effectiveCellWidth, effectiveCellHeight);
-
-    // Set orb size as a random percentage of this base cell dimension
-    // Adjusted range to ensure it's not too big but still visible
-    return p.random(baseCellDimension * 0.4, baseCellDimension * 0.6);
+    
+    // Calculate cell dimensions
+    const cellWidth = p.width / this.cols;
+    const cellHeight = p.height / this.rows;
+    
+    // Calculate the maximum safe orb radius based on position
+    // We need to ensure the orb doesn't extend beyond cell boundaries
+    const maxRadiusX = cellWidth * Math.min(this.ox, 1 - this.ox) * 0.8; // 80% of available space
+    const maxRadiusY = cellHeight * Math.min(this.oy, 1 - this.oy) * 0.8; // 80% of available space
+    
+    // Use the smaller of the two to ensure it fits in both dimensions
+    const maxSafeRadius = Math.min(maxRadiusX, maxRadiusY);
+    
+    // Set orb size as a random percentage of the maximum safe radius
+    // This ensures orbs are always contained within their cells
+    const minSizeRatio = 0.4; // 40% of max safe radius
+    const maxSizeRatio = 0.7; // 70% of max safe radius
+    
+    return p.random(maxSafeRadius * minSizeRatio, maxSafeRadius * maxSizeRatio) * 2; // *2 for diameter
   }
 
   /**
