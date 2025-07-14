@@ -121,14 +121,8 @@ const LansacpessNo1 = (p) => {
 
         p.clear();
         p.currentLandscapes = p.landscapes[currentCue - 1];
-
-        if(currentCue % 9 > 5) {
-            p.currentLandscapes.setFullDisplayMode();
-        }
-        else {
-            p.currentLandscapes.fullDisplay = false;
-            p.currentLandscapes.init(duration);
-        }
+        p.currentLandscapes.fullDisplay = false;
+        p.currentLandscapes.init(duration);
     };
 
     p.generatePalette = () => {
