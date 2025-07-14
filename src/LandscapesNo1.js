@@ -12,10 +12,6 @@ const base = import.meta.env.BASE_URL || './';
 const audio = base + 'audio/landscapes-no-1.ogg';
 const midi = base + 'audio/landscapes-no-1.mid';
 
-// SVG data URIs for play and pause icons (simple, no circle)
-const playCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><polygon points=\'8,6 26,16 8,26\' fill=\'black\'/></svg>") 8 8, pointer';
-const pauseCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><rect x=\'8\' y=\'6\' width=\'4\' height=\'20\' fill=\'black\'/><rect x=\'20\' y=\'6\' width=\'4\' height=\'20\' fill=\'black\'/></svg>") 8 8, pointer';
-
 const LansacpessNo1 = (p) => {
     /** 
      * Core audio properties
