@@ -12,6 +12,10 @@ const base = import.meta.env.BASE_URL || './';
 const audio = base + 'audio/landscapes-no-1.ogg';
 const midi = base + 'audio/landscapes-no-1.mid';
 
+// SVG data URIs for play and pause icons (simple, no circle)
+const playCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><polygon points=\'8,6 26,16 8,26\' fill=\'black\'/></svg>") 8 8, pointer';
+const pauseCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><rect x=\'8\' y=\'6\' width=\'4\' height=\'20\' fill=\'black\'/><rect x=\'20\' y=\'6\' width=\'4\' height=\'20\' fill=\'black\'/></svg>") 8 8, pointer';
+
 const LansacpessNo1 = (p) => {
     /** 
      * Core audio properties
@@ -28,7 +32,13 @@ const LansacpessNo1 = (p) => {
      */
     p.preload = () => {
         p.song = p.loadSound(audio, p.loadMidi);
-        p.song.onended(() => p.songHasFinished = true);
+        p.song.onended(() => {
+            p.songHasFinished = true;
+            if (p.canvas) {
+                p.canvas.classList.add('p5Canvas--cursor-play');
+                p.canvas.classList.remove('p5Canvas--cursor-pause');
+            }
+        });
     };
 
     p.colorPalette = null;
@@ -48,6 +58,8 @@ const LansacpessNo1 = (p) => {
         }
         p.randomSeed(seed);
         p.createCanvas(p.windowWidth, p.windowHeight);
+        p.canvas = p._renderer.canvas;
+        p.canvas.classList.add('p5Canvas--cursor-play');
         p.colorPalette = p.generatePalette(6);
         p.rectMode(p.CENTER);
         p.landscapes = Array.from({ length: 46 }, () => new LandscapesGrid(p));
@@ -163,6 +175,8 @@ const LansacpessNo1 = (p) => {
         if(p.audioLoaded){
             if (p.song.isPlaying()) {
                 p.song.pause();
+                p.canvas.classList.add('p5Canvas--cursor-play');
+                p.canvas.classList.remove('p5Canvas--cursor-pause');
             } else {
                 if (parseInt(p.song.currentTime()) >= parseInt(p.song.buffer.duration)) {
                     /** 
@@ -173,6 +187,8 @@ const LansacpessNo1 = (p) => {
                 p.song.play();
                 p.showingStatic = false;
                 p.currentLandscapes = p.landscapes[0];
+                p.canvas.classList.add('p5Canvas--cursor-pause');
+                p.canvas.classList.remove('p5Canvas--cursor-play');
             }
         }
     }
