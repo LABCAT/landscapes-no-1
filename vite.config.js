@@ -22,15 +22,15 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: 'src/audio/*.ogg',
+          src: 'public/audio/*.ogg',
           dest: 'audio',
         },
         {
-          src: 'src/audio/*.mid',
+          src: 'public/audio/*.mid',
           dest: 'audio',
         },
         {
-          src: 'src/lib/fxhash.min.js',
+          src: 'src/lib/hl-gen.js',
           dest: 'lib',
         },
       ],

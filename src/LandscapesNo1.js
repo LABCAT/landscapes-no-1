@@ -44,14 +44,16 @@ const LansacpessNo1 = (p) => {
     p.currentLandscapes = null;
 
     p.setup = () => {
-        // Use $fx from fxhash.min.js
-        let seed = 12345;
-        let fxhash = null;
-        if (typeof window !== 'undefined' && window.$fx && window.$fx.hash) {
-            fxhash = window.$fx.hash;
-            // Use the first 16 characters of the hash as a hex seed, or hashCode fallback
-            seed = parseInt(fxhash.slice(2, 16), 16) || Array.from(fxhash).reduce((acc, c) => acc + c.charCodeAt(0), 0);
-        }
+        // Use Highlight hl-gen.js for deterministic randomness with p5.js
+        const hashToSeed = (str) => {
+          let hash = 0;
+          for (let i = 0; i < str.length; i++) {
+            hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+          }
+          return Math.abs(hash);
+        };
+        const seed = hashToSeed(hl.tx.hash + hl.tx.tokenId);
+        console.log(`Hash: ${hl.tx.hash}, TokenID: ${hl.tx.tokenId}, Seed: ${seed}`);
         p.randomSeed(seed);
         p.createCanvas(p.windowWidth, p.windowHeight);
         p.canvas = p._renderer.canvas;
@@ -69,6 +71,7 @@ const LansacpessNo1 = (p) => {
                 p.landscapes[0].fullDisplay = true;
                 p.landscapes[0].draw();
             }
+            hl.token.capturePreview()
         } else if(p.currentLandscapes && p.audioLoaded && p.song.isPlaying()){
             p.currentLandscapes.draw();
             p.currentLandscapes.update();
@@ -185,7 +188,9 @@ const LansacpessNo1 = (p) => {
 
     p.windowResized = () => {
         p.resizeCanvas(p.windowWidth, p.windowHeight);
-        p.currentLandscapes.updateGridForOrientation();
+        if (p.currentLandscapes) {
+            p.currentLandscapes.updateGridForOrientation();
+        }
         p.redraw();
     };
 };
